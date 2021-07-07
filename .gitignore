@@ -1,3 +1,17 @@
+# google cloud credentials
+secrets.json
+
+# dolt
+dolt_repo
+.dolt/
+
+# vscode
+.vscode/
+
+# mysql reference cheatsheets
+mysql*.png
+mysql*.jpg
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
