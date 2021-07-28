@@ -350,7 +350,7 @@ app.layout = html.Div(
     Input(component_id="xtab1-dropdown", component_property="value"),
 )
 def test(poll, question, xtab1):
-    return visualize.poll_vis(responses=r, poll_id=poll, question_id=question, crosstab_variable=xtab1)
+    return visualize.poll_vis(responses=r, poll_id=poll, question_id=question, crosstab_var_1=xtab1)
 
 # ------ update poll, question, crosstab options based on country dropdown ----- #
 @app.callback(

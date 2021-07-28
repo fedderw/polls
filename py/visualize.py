@@ -1,5 +1,7 @@
 import ubicenter
 import plotly.express as px
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 from py import preprocess_data as ppd
 
 VARIABLE_MAPPING = {
@@ -25,7 +27,7 @@ variable_mapping_inverse["pollster_wrap"] = "Pollster"
 variable_mapping_inverse["pct_fav"] = "% favorability"
 
 
-def poll_vis(responses, poll_id, question_id=None, crosstab_variable="-"):
+def poll_vis(responses, poll_id, question_id=None, crosstab_var_1="-",crosstab_var_2="-"):
     """[summary]
 
     Parameters
@@ -36,9 +38,13 @@ def poll_vis(responses, poll_id, question_id=None, crosstab_variable="-"):
         [description]
     question_id : [type], optional
         [description], by default None
-    crosstab_variable : str, optional
+    crosstab_var_1 : str, optional
         [description], by default "-"
     """
+    # return none if no poll_id
+    # this messes up the rest of the poll_vis function for some reason
+    # if poll_id == None:
+    #     return None
     if question_id is None:
         target_questions = responses[responses.poll_id == poll_id].question_id.unique()
         # check if there's only one question for the poll, if there's more than 1 --
@@ -49,30 +55,57 @@ def poll_vis(responses, poll_id, question_id=None, crosstab_variable="-"):
     target_responses = responses[
         (responses.poll_id == poll_id)
         & (responses.question_id == question_id)
-        & (responses.xtab1_var == crosstab_variable)
+        & (responses.xtab1_var == crosstab_var_1)
     ]
     
+    nunique_xtab1_vars=len(target_questions.xtab1_var.unique())
     target_responses["question_text_wrap"] = ppd.plotly_wrap(target_responses.question_text.copy(),130)
     # question_text=target_responses["question_text_wrap"].iloc[0] 
     question_text=target_responses["question_text_wrap"].unique()[0] if target_responses.shape[0] > 0 else "No question text"
     
-
-    # if cross tabs, pull the corresponding responses, but if no crosstabs selected, pull the response
-    # from the "-" rows
-    fig = px.bar(
-        target_responses,
-        x="percent_norm",
-        y="xtab1_val",
-        color="response",
-        barmode="stack",
-        orientation="h",
-        title=question_text,
-    )
-    fig.update_layout(
-        xaxis_title="Percentage", yaxis_title=crosstab_variable, xaxis_tickformat="%",
-    )
+    if crosstab_var_1 == "-" & nunique_xtab1_vars > 1:
+        fig = make_subplots(
+            rows=nunique_xtab1_vars, cols=1, shared_xaxes=True, subplot_titles=target_questions.xtab1_var.unique()
+            )
+        
+        for i, var in enumerate(target_questions.xtab1_var.unique()):
+            fig.add_trace(
+                px.bar(
+                    target_responses[target_responses.xtab1_var == var],
+                    x="xtab1_val",
+                    y="response",
+                    text=target_responses.question_text_wrap,
+                    textposition="auto",
+                    name=var,
+                    marker={"color": "black"},
+                    opacity=0.8,
+                ),
+                row=i + 1,
+                col=1,
+            )
+        
+        fig.update_layout(
+        xaxis_title="Percentage", yaxis_title=crosstab_var_1, xaxis_tickformat="%",
+        )
+        
+        return fig
+    
+    else:
+        # if cross tabs, pull the corresponding responses, but if no crosstabs selected, pull the response
+        # from the "-" rows
+        fig = px.bar(
+            target_responses,
+            x="percent_norm",
+            y="xtab1_val",
+            color="response",
+            barmode="stack",
+            orientation="h",
+            title=question_text,
+        )
+        fig.update_layout(
+            xaxis_title="Percentage", yaxis_title=crosstab_var_1, xaxis_tickformat="%",
+        )
     return fig
-
 
 # Function to create a bubble chart for % favorability across a set of poll/question pairs.
 def bubble_chart(
