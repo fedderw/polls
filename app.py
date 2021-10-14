@@ -78,92 +78,6 @@ bubble_fig = visualize.bubble_chart(
     responses=r,
 )
 
-bubble_dropdown_deck = dbc.CardDeck(
-    [
-        # define first card with poll selection options
-        dbc.Card(
-            [
-                # ------------- select a country ------------ #
-                dbc.CardBody(
-                    [
-                        html.Label(
-                            ["Filter countries:"],
-                            style={
-                                "font-weight": "bold",
-                                "text-align": "center",
-                                "color": BLUE,
-                                "fontSize": 20,
-                            },
-                        ),
-                        # TODO: for the EU polls with country crosstab, have those as selectable options
-                        dcc.Dropdown(
-                            # define component_id for input of app@callback function
-                            id="country-dropdown-2",  # ID "country-dropdown-2"
-                            multi=True,
-                            # create a list of dicts of countries and their labels
-                            # to be selected by user in dropdown
-                            options=list_options(countries),
-                            value=countries,
-                        ),
-                    ],
-                    # style={"height": "100px"},
-                ),
-            ],
-            # color="info",
-            outline=True,
-        ),
-        dbc.Card(
-            [
-                dbc.CardBody(
-                    [
-                        html.Label(
-                            ["Filter demographics based on:"],
-                            id="xtab1-bubble-label",  # ID "xtab1-bubble-label"
-                            style={
-                                "font-weight": "bold",
-                                "text-align": "center",
-                                "color": BLUE,
-                                "fontSize": 20,
-                            },
-                        ),
-                        # TODO: show question names instead of question_id
-                        dcc.Dropdown(
-                            # define component_id for input of app@callback function
-                            id="xtab1-bubble-dropdown",  # ID         "xtab1-bubble-dropdown"
-                            multi=False,
-                            value="-",
-                            # to be selected by user in dropdown
-                            options=list_options(xtab1_vars),
-                        ),
-                        html.Br(),
-                        html.Label(
-                            ["Select demographic:"],
-                            style={
-                                "font-weight": "bold",
-                                "text-align": "center",
-                                "color": BLUE,
-                                "fontSize": 20,
-                            },
-                        ),
-                        # TODO: show question names instead of question_id
-                        dcc.Dropdown(
-                            # define component_id for input of app@callback function
-                            id="xtab1_val-bubble-dropdown",  # ID "xtab1_val-bubble-dropdown"
-                            multi=False,
-                            value="-",
-                            # to be selected by user in dropdown
-                            options=list_options(xtab1_vals),
-                        ),
-                    ],
-                    id="xtab1-bubble-cardbody",  # ID "xtab1-bubble-cardbody"
-                ),
-            ],
-            # color="info",
-            outline=False,
-        ),
-    ],
-)
-
 bubble_graph_component = (
     dcc.Graph(
         id="bubble-graph",  # ID "bubble-graph"
@@ -186,10 +100,11 @@ bubble_input_components = [
     ),
     dcc.Dropdown(
         # define component_id for input of app@callback function
-        id="country-dropdown-2",  # ID "country-dropdown-2"
-        multi=True,
+        id="country-bubble-dropdown",  # ID "country-bubble-dropdown"
+        multi=False,
         # create a list of dicts of countries and their labels
         # to be selected by user in dropdown
+        # options=list_options(countries)+[{"label": "All countries", "value": countries}],
         options=list_options(countries),
         value=countries,
         # shrink the fontsize of the country selections to make the buble a little mroe readable
@@ -575,6 +490,7 @@ app.layout = html.Div(
     ]
 )
 
+
 # -------------------------------------------------------- #
 #                     Assign Bar Graph module callbacks                     #
 # --------------------------------------------------------
@@ -802,18 +718,26 @@ def set_default_xtab1_value(country, poll, question):
     Output("bubble-graph", "figure"),
     # # this is to update xtab1_val-bubble-dropdown VALUE based on selected xtab1_var
     # Output(component_id="xtab1_val-bubble-dropdown", component_property="value"),
-    Input("country-dropdown-2", "value"),
+    Input("country-bubble-dropdown", "value"),
     # xtab1-bubble-dropdown input will be a string
     Input("xtab1-bubble-dropdown", "value"),
     Input("xtab1_val-bubble-dropdown", "value"),
 )
 def update_bubble_chart(
-    countries,
+    country_dropdown_value,
     xtab1_var,
     xtab1_val,
 ):
+    # debug
+    print("Country dropdown value type: ", type(country_dropdown_value)) 
     # subsets r to only include the selected countries
-    r_sub = r[r.country.isin(countries)]
+    if type(country_dropdown_value) == list():
+        r_sub = r[r.country.isin(country_dropdown_value)]
+        print("len r_sub: ",len(r_sub))
+    else:
+        r_sub = r[r.country.isin([country_dropdown_value])]
+        print("len r_sub: ",len(r_sub))
+    # check if countries is list or string
 
     # updates xtab1-bubble-dropdown options based on selected country
     xtab1_options = list_options(r_sub.xtab1_var.unique())
